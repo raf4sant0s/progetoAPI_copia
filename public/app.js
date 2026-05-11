@@ -210,11 +210,11 @@ function renderEvents() {
     let actionBtn = '';
     
     if (isOwner) {
-      actionBtn = `<button onclick="deleteEvent('${event._id}')" class="btn btn-outline-danger btn-sm">Deletar Evento</button>`;
+      actionBtn = `<button data-action="delete" data-id="${event._id}" class="btn btn-outline-danger btn-sm">Deletar Evento</button>`;
     } else if (isRegistered) {
       actionBtn = `<button disabled class="btn btn-secondary btn-sm">Inscrito ✓</button>`;
     } else {
-      actionBtn = `<button onclick="registerForEvent('${event._id}')" class="btn btn-primary btn-sm">Inscrever-se</button>`;
+      actionBtn = `<button data-action="register" data-id="${event._id}" class="btn btn-primary btn-sm">Inscrever-se</button>`;
     }
 
     return `
@@ -235,6 +235,21 @@ function renderEvents() {
     `;
   }).join('');
 }
+
+// Event Delegation for action buttons
+eventsGrid.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  
+  if (action === 'delete') {
+    deleteEvent(id);
+  } else if (action === 'register') {
+    registerForEvent(id);
+  }
+});
 
 // Create Event
 formCreateEvent.addEventListener('submit', async (e) => {
