@@ -21,6 +21,7 @@ const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 const eventRoutes = require('./routes/eventRoutes');
 app.use('/api/events', eventRoutes);
-// app.use('/api/registrations', registrationRoutes);
+const registrationRoutes = require('./routes/registrationRoutes');
+app.use('/api/registrations', registrationRoutes);
 
 module.exports = app;
