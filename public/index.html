@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Eventos | Premium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Notificações Flutuantes -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- App Container -->
+  <div id="app-container" class="app-container">
+    
+    <!-- Tela de Autenticação -->
+    <section id="auth-section" class="section glass-panel">
+      <div class="auth-header">
+        <div class="logo-box">
+          <div class="logo-icon"></div>
+          <h1>Gestão de Eventos</h1>
+        </div>
+        <p>Acesse ou crie sua conta para começar</p>
+      </div>
+
+      <div class="tabs">
+        <button id="tab-login" class="tab-btn active">Entrar</button>
+        <button id="tab-register" class="tab-btn">Cadastrar</button>
+      </div>
+
+      <!-- Formulário de Login -->
+      <form id="form-login" class="auth-form active">
+        <div class="input-group">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" required placeholder="seu@email.com">
+        </div>
+        <div class="input-group">
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Acessar Conta</button>
+      </form>
+
+      <!-- Formulário de Registro -->
+      <form id="form-register" class="auth-form hidden">
+        <div class="input-group">
+          <label for="register-name">Nome Completo</label>
+          <input type="text" id="register-name" required placeholder="Maria Silva">
+        </div>
+        <div class="input-group">
+          <label for="register-email">Email</label>
+          <input type="email" id="register-email" required placeholder="maria@teste.com">
+        </div>
+        <div class="input-group">
+          <label for="register-password">Senha</label>
+          <input type="password" id="register-password" required placeholder="Mínimo 6 caracteres">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Criar Conta</button>
+      </form>
+    </section>
+
+    <!-- Tela do Dashboard -->
+    <section id="dashboard-section" class="section dashboard-container hidden">
+      <header class="dashboard-header glass-panel">
+        <div class="logo-box sm">
+          <div class="logo-icon"></div>
+          <h2>Meus Eventos</h2>
+        </div>
+        <div class="user-controls">
+          <span id="user-greeting">Olá, Usuário</span>
+          <button id="btn-logout" class="btn btn-outline-danger">Sair</button>
+        </div>
+      </header>
+
+      <main class="dashboard-content">
+        <div class="actions-bar">
+          <h3>Eventos Disponíveis</h3>
+          <button id="btn-show-create" class="btn btn-primary">
+            <span>+</span> Novo Evento
+          </button>
+        </div>
+
+        <!-- Formulário Criar Evento (Oculto por padrão) -->
+        <div id="create-event-panel" class="create-event-panel glass-panel hidden">
+          <h4>Criar Novo Evento</h4>
+          <form id="form-create-event">
+            <div class="form-grid">
+              <div class="input-group">
+                <label>Título</label>
+                <input type="text" id="event-title" required placeholder="Hackathon Node.js">
+              </div>
+              <div class="input-group">
+                <label>Categoria</label>
+                <select id="event-category" required>
+                  <option value="conferencia">Conferência</option>
+                  <option value="workshop">Workshop</option>
+                  <option value="seminario">Seminário</option>
+                  <option value="meetup">Meetup</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label>Data e Hora</label>
+                <input type="datetime-local" id="event-date" required>
+              </div>
+              <div class="input-group">
+                <label>Vagas Máximas</label>
+                <input type="number" id="event-max" required min="1" placeholder="50">
+              </div>
+              <div class="input-group full-width">
+                <label>Localização</label>
+                <input type="text" id="event-location" required placeholder="Online ou Endereço">
+              </div>
+              <div class="input-group full-width">
+                <label>Descrição</label>
+                <textarea id="event-description" required placeholder="Detalhes sobre o evento..." rows="3"></textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" id="btn-cancel-create" class="btn btn-secondary">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Criar Evento</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Grid de Eventos -->
+        <div id="events-grid" class="events-grid">
+          <!-- Os eventos serão inseridos aqui via JavaScript -->
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <p>Carregando eventos...</p>
+          </div>
+        </div>
+
+      </main>
+    </section>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
