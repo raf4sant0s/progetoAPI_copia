@@ -11,20 +11,20 @@ const userGreeting = document.getElementById('user-greeting');
 const btnLogout = document.getElementById('btn-logout');
 const eventsGrid = document.getElementById('events-grid');
 const btnShowCreate = document.getElementById('btn-show-create');
-const createEventPanel = document.getElementById('create-event-panel');
-const btnCancelCreate = document.getElementById('btn-cancel-create');
-const formCreateEvent = document.getElementById('form-create-event');
+const eventFormPanel = document.getElementById('event-form-panel');
+const btnCancelEvent = document.getElementById('btn-cancel-event');
+const formEvent = document.getElementById('form-event');
+const eventFormTitle = document.getElementById('event-form-title');
 
 // State
 let currentUser = null;
 let currentToken = localStorage.getItem('token');
-let myRegistrations = [];
+let myRegistrations = []; // Formato: { eventId, registrationId }
+let allEvents = [];
 
 // === Initialization ===
 function init() {
   if (currentToken) {
-    // If token exists, we try to load dashboard
-    // In a real app we would validate the token first, but here we just try to fetch events.
     showDashboard();
     fetchEvents();
     fetchMyRegistrations();
@@ -64,12 +64,12 @@ tabRegister.addEventListener('click', () => {
 });
 
 btnShowCreate.addEventListener('click', () => {
-  createEventPanel.classList.remove('hidden');
+  openEventForm();
 });
 
-btnCancelCreate.addEventListener('click', () => {
-  createEventPanel.classList.add('hidden');
-  formCreateEvent.reset();
+btnCancelEvent.addEventListener('click', () => {
+  eventFormPanel.classList.add('hidden');
+  formEvent.reset();
 });
 
 btnLogout.addEventListener('click', () => {
@@ -159,7 +159,7 @@ formRegister.addEventListener('submit', async (e) => {
   }
 });
 
-// Fetch My Registrations (to know which events I'm in)
+// Fetch My Registrations
 async function fetchMyRegistrations() {
   try {
     const res = await fetch(`${API_URL}/registrations/my`, {
@@ -167,8 +167,11 @@ async function fetchMyRegistrations() {
     });
     if (res.ok) {
       const data = await res.json();
-      myRegistrations = data.registrations.map(r => r.event._id);
-      renderEvents(); // Re-render to update buttons
+      myRegistrations = data.registrations.map(r => ({
+        eventId: r.event._id,
+        registrationId: r._id
+      }));
+      renderEvents();
     }
   } catch (err) {
     console.error('Error fetching registrations:', err);
@@ -176,7 +179,6 @@ async function fetchMyRegistrations() {
 }
 
 // Fetch Events
-let allEvents = [];
 async function fetchEvents() {
   eventsGrid.innerHTML = `<div class="empty-state"><div class="spinner"></div><p>Carregando eventos...</p></div>`;
   try {
@@ -188,7 +190,7 @@ async function fetchEvents() {
       allEvents = data.events;
       renderEvents();
     } else if (res.status === 401) {
-      btnLogout.click(); // Token expired or invalid
+      btnLogout.click();
     }
   } catch (err) {
     eventsGrid.innerHTML = `<div class="empty-state"><p style="color:var(--danger)">Erro ao carregar eventos.</p></div>`;
@@ -203,16 +205,20 @@ function renderEvents() {
   }
 
   eventsGrid.innerHTML = allEvents.map(event => {
+    // Corrige fuso horário para exibição
     const date = new Date(event.date).toLocaleString('pt-BR');
     const isOwner = currentUser && event.organizer && event.organizer._id === currentUser._id;
-    const isRegistered = myRegistrations.includes(event._id);
+    const registration = myRegistrations.find(r => r.eventId === event._id);
     
     let actionBtn = '';
     
     if (isOwner) {
-      actionBtn = `<button data-action="delete" data-id="${event._id}" class="btn btn-outline-danger btn-sm">Deletar Evento</button>`;
-    } else if (isRegistered) {
-      actionBtn = `<button disabled class="btn btn-secondary btn-sm">Inscrito ✓</button>`;
+      actionBtn = `
+        <button data-action="edit" data-id="${event._id}" class="btn btn-secondary btn-sm">Editar</button>
+        <button data-action="delete" data-id="${event._id}" class="btn btn-outline-danger btn-sm">Deletar</button>
+      `;
+    } else if (registration) {
+      actionBtn = `<button data-action="cancel-reg" data-id="${registration.registrationId}" class="btn btn-secondary btn-sm">Cancelar Inscrição</button>`;
     } else {
       actionBtn = `<button data-action="register" data-id="${event._id}" class="btn btn-primary btn-sm">Inscrever-se</button>`;
     }
@@ -248,14 +254,51 @@ eventsGrid.addEventListener('click', (e) => {
     deleteEvent(id);
   } else if (action === 'register') {
     registerForEvent(id);
+  } else if (action === 'cancel-reg') {
+    cancelRegistration(id);
+  } else if (action === 'edit') {
+    openEventForm(id);
   }
 });
 
-// Create Event
-formCreateEvent.addEventListener('submit', async (e) => {
+// Open Form for Create or Edit
+function openEventForm(eventId = null) {
+  formEvent.reset();
+  document.getElementById('event-id').value = '';
+  
+  if (eventId) {
+    const event = allEvents.find(e => e._id === eventId);
+    if (event) {
+      eventFormTitle.textContent = 'Editar Evento';
+      document.getElementById('event-id').value = event._id;
+      document.getElementById('event-title').value = event.title;
+      document.getElementById('event-category').value = event.category;
+      
+      // Converte a data para o formato aceito pelo input datetime-local (YYYY-MM-DDThh:mm)
+      const dateObj = new Date(event.date);
+      dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
+      document.getElementById('event-date').value = dateObj.toISOString().slice(0, 16);
+      
+      document.getElementById('event-max').value = event.maxParticipants;
+      document.getElementById('event-location').value = event.location;
+      document.getElementById('event-description').value = event.description;
+    }
+  } else {
+    eventFormTitle.textContent = 'Criar Novo Evento';
+  }
+  
+  eventFormPanel.classList.remove('hidden');
+}
+
+// Submit Event Form (Create / Update)
+formEvent.addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const newEvent = {
+  const id = document.getElementById('event-id').value;
+  const method = id ? 'PUT' : 'POST';
+  const url = id ? `${API_URL}/events/${id}` : `${API_URL}/events`;
+  
+  const eventData = {
     title: document.getElementById('event-title').value,
     category: document.getElementById('event-category').value,
     date: document.getElementById('event-date').value,
@@ -265,30 +308,30 @@ formCreateEvent.addEventListener('submit', async (e) => {
   };
 
   try {
-    const res = await fetch(`${API_URL}/events`, {
-      method: 'POST',
+    const res = await fetch(url, {
+      method,
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${currentToken}`
       },
-      body: JSON.stringify(newEvent)
+      body: JSON.stringify(eventData)
     });
     
     const data = await res.json();
     if (res.ok) {
-      showToast('Evento criado com sucesso!');
-      btnCancelCreate.click();
+      showToast(id ? 'Evento atualizado!' : 'Evento criado com sucesso!');
+      btnCancelEvent.click();
       fetchEvents();
     } else {
       showToast(data.error, 'error');
     }
   } catch (err) {
-    showToast('Erro ao criar evento', 'error');
+    showToast('Erro ao salvar evento', 'error');
   }
 });
 
 // Delete Event
-window.deleteEvent = async (id) => {
+async function deleteEvent(id) {
   if (!confirm('Tem certeza que deseja deletar este evento?')) return;
   
   try {
@@ -307,10 +350,10 @@ window.deleteEvent = async (id) => {
   } catch (err) {
     showToast('Erro ao deletar', 'error');
   }
-};
+}
 
 // Register for Event
-window.registerForEvent = async (eventId) => {
+async function registerForEvent(eventId) {
   try {
     const res = await fetch(`${API_URL}/registrations`, {
       method: 'POST',
@@ -324,15 +367,36 @@ window.registerForEvent = async (eventId) => {
     const data = await res.json();
     if (res.ok) {
       showToast('Inscrição realizada com sucesso!');
-      myRegistrations.push(eventId);
-      renderEvents();
+      fetchMyRegistrations();
     } else {
       showToast(data.error, 'error');
     }
   } catch (err) {
     showToast('Erro ao realizar inscrição', 'error');
   }
-};
+}
+
+// Cancel Registration
+async function cancelRegistration(registrationId) {
+  if (!confirm('Tem certeza que deseja cancelar sua inscrição?')) return;
+  
+  try {
+    const res = await fetch(`${API_URL}/registrations/${registrationId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    
+    if (res.ok) {
+      showToast('Inscrição cancelada!');
+      fetchMyRegistrations();
+    } else {
+      const data = await res.json();
+      showToast(data.error, 'error');
+    }
+  } catch (err) {
+    showToast('Erro ao cancelar inscrição', 'error');
+  }
+}
 
 // Init
 init();

@@ -84,10 +84,11 @@
           </button>
         </div>
 
-        <!-- Formulário Criar Evento (Oculto por padrão) -->
-        <div id="create-event-panel" class="create-event-panel glass-panel hidden">
-          <h4>Criar Novo Evento</h4>
-          <form id="form-create-event">
+        <!-- Formulário Criar/Editar Evento (Oculto por padrão) -->
+        <div id="event-form-panel" class="create-event-panel glass-panel hidden">
+          <h4 id="event-form-title">Criar Novo Evento</h4>
+          <form id="form-event">
+            <input type="hidden" id="event-id">
             <div class="form-grid">
               <div class="input-group">
                 <label>Título</label>
@@ -121,8 +122,8 @@
               </div>
             </div>
             <div class="form-actions">
-              <button type="button" id="btn-cancel-create" class="btn btn-secondary">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Criar Evento</button>
+              <button type="button" id="btn-cancel-event" class="btn btn-secondary">Cancelar</button>
+              <button type="submit" id="btn-submit-event" class="btn btn-primary">Salvar Evento</button>
             </div>
           </form>
         </div>
