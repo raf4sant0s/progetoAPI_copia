@@ -30,25 +30,37 @@ const createRegistration = async (req, res) => {
       return res.status(400).json({ error: 'Evento lotado. Não há mais vagas disponíveis.' });
     }
 
-    const registration = await Registration.create({
+    // Verifica se já existe inscrição (para lidar com reativação de canceladas)
+    let registration = await Registration.findOne({
       event: eventId,
       participant: req.user.id
     });
+
+    if (registration) {
+      if (registration.status === 'confirmada') {
+        return res.status(400).json({ error: 'Você já está inscrito neste evento.' });
+      }
+      // Se estava cancelada, reativa
+      registration.status = 'confirmada';
+      await registration.save();
+    } else {
+      // Cria nova inscrição
+      registration = await Registration.create({
+        event: eventId,
+        participant: req.user.id
+      });
+    }
 
     await registration.populate([
       { path: 'event', select: 'title date location' },
       { path: 'participant', select: 'name email' }
     ]);
 
-    res.status(201).json({
+    res.status(registration.isNew ? 201 : 200).json({
       message: 'Inscrição realizada com sucesso!',
       registration
     });
   } catch (error) {
-    // Erro de duplicação (índice único)
-    if (error.code === 11000) {
-      return res.status(400).json({ error: 'Você já está inscrito neste evento.' });
-    }
     if (error.kind === 'ObjectId') {
       return res.status(400).json({ error: 'ID do evento inválido.' });
     }
@@ -59,7 +71,7 @@ const createRegistration = async (req, res) => {
 // GET /api/registrations/my — Listar minhas inscrições
 const getMyRegistrations = async (req, res) => {
   try {
-    const registrations = await Registration.find({ participant: req.user.id })
+    const registrations = await Registration.find({ participant: req.user.id, status: 'confirmada' })
       .populate('event', 'title date location category status')
       .sort({ registeredAt: -1 });
 
