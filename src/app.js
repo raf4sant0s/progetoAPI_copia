@@ -19,7 +19,8 @@ app.get('/', (req, res) => {
 // Rotas da API
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
-// app.use('/api/events', eventRoutes);
+const eventRoutes = require('./routes/eventRoutes');
+app.use('/api/events', eventRoutes);
 // app.use('/api/registrations', registrationRoutes);
 
 module.exports = app;
