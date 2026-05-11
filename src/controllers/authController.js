@@ -34,6 +34,7 @@ const register = async (req, res) => {
       const messages = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({ error: messages.join(', ') });
     }
+    console.error('Erro no registro:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 };
