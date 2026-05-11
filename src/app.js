@@ -16,8 +16,9 @@ app.get('/', (req, res) => {
   res.json({ message: 'API de Gestão de Eventos funcionando!' });
 });
 
-// Rotas da API (serão adicionadas nas próximas features)
-// app.use('/api/auth', authRoutes);
+// Rotas da API
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 // app.use('/api/events', eventRoutes);
 // app.use('/api/registrations', registrationRoutes);
 
