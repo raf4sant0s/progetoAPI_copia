@@ -11,10 +11,9 @@ app.use(cors());
 app.use(helmet());
 app.use(sanitize);
 
-// Rota de teste
-app.get('/', (req, res) => {
-  res.json({ message: 'API de Gestão de Eventos funcionando!' });
-});
+// Arquivos estáticos (Front-end)
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Rotas da API
 const authRoutes = require('./routes/authRoutes');
