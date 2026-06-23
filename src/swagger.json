@@ -1,69 +1,191 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "API REST - Sistema de Gestão de Eventos",
-    "description": "Esta é a documentação completa e interativa da API REST para o Sistema de Gestão de Eventos. A API permite gerenciar usuários (registro e autenticação), eventos (CRUD completo com controle de acesso de organizador) e inscrições (inscrição, cancelamento e listagem de participantes).",
-    "version": "1.0.0",
-    "contact": {
-      "name": "Equipe de Desenvolvimento de Eventos",
-      "email": "desenvolvimento@gestaoeventos.com"
-    }
+    "title": "API de Loja",
+    "description": "Documentação da API para o sistema de Loja com Clientes, Produtos, Categorias e Pedidos. Migrado para MySQL.",
+    "version": "2.0.0"
   },
   "servers": [
     {
       "url": "http://localhost:3000",
-      "description": "Servidor de Desenvolvimento Local"
+      "description": "Servidor Local"
     }
   ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "senha": {
+            "type": "string"
+          }
+        }
+      },
+      "Cliente": {
+        "type": "object",
+        "properties": {
+          "id_cliente": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Produto": {
+        "type": "object",
+        "properties": {
+          "id_produto": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "number"
+          },
+          "estoque": {
+            "type": "integer"
+          },
+          "categorias_id_categoria": {
+            "type": "integer"
+          },
+          "categoria_nome": {
+            "type": "string"
+          }
+        }
+      },
+      "Categoria": {
+        "type": "object",
+        "properties": {
+          "id_categoria": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
+      "Pedido": {
+        "type": "object",
+        "properties": {
+          "id_pedido": {
+            "type": "integer"
+          },
+          "data": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "clientes_id_cliente": {
+            "type": "integer"
+          },
+          "cliente_nome": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProdutoPedido"
+            }
+          }
+        }
+      },
+      "ProdutoPedido": {
+        "type": "object",
+        "properties": {
+          "produtos_id_produto": {
+            "type": "integer"
+          },
+          "pedidos_id_pedido": {
+            "type": "integer"
+          },
+          "quantidade": {
+            "type": "integer"
+          },
+          "valor": {
+            "type": "number"
+          },
+          "produto_nome": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
   "tags": [
     {
-      "name": "Autenticação",
-      "description": "Endpoints relacionados ao registro de novos usuários e login."
+      "name": "Sistema",
+      "description": "Rotas de sistema e verificação"
     },
     {
-      "name": "Eventos",
-      "description": "Endpoints do CRUD principal de Eventos (necessita de autenticação)."
+      "name": "Auth",
+      "description": "Autenticação"
     },
     {
-      "name": "Inscrições",
-      "description": "Endpoints para inscrição em eventos e controle de participantes (necessita de autenticação)."
+      "name": "Clientes",
+      "description": "Gerenciamento de clientes"
+    },
+    {
+      "name": "Categorias",
+      "description": "Gerenciamento de categorias de produtos"
+    },
+    {
+      "name": "Produtos",
+      "description": "Gerenciamento de produtos"
+    },
+    {
+      "name": "Pedidos",
+      "description": "Gerenciamento de pedidos e vendas"
     }
   ],
   "paths": {
+    "/api/versao": {
+      "get": {
+        "summary": "Obter a versão da API",
+        "tags": [
+          "Sistema"
+        ],
+        "responses": {
+          "200": {
+            "description": "Retorna a versão e o status da API."
+          }
+        }
+      }
+    },
     "/api/auth/register": {
       "post": {
+        "summary": "Registrar usuário",
         "tags": [
-          "Autenticação"
+          "Auth"
         ],
-        "summary": "Registrar um novo usuário",
-        "description": "Cadastra um novo usuário no sistema. Por padrão, o novo usuário recebe a role 'user'.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "email",
-                  "password"
-                ],
                 "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 3,
-                    "example": "Carlos Silva"
-                  },
                   "email": {
-                    "type": "string",
-                    "format": "email",
-                    "example": "carlos.silva@example.com"
+                    "type": "string"
                   },
-                  "password": {
-                    "type": "string",
-                    "format": "password",
-                    "minLength": 6,
-                    "example": "senha123"
+                  "senha": {
+                    "type": "string"
                   }
                 }
               }
@@ -72,78 +194,35 @@
         },
         "responses": {
           "201": {
-            "description": "Usuário registrado com sucesso!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Usuário registrado com sucesso!"
-                    },
-                    "user": {
-                      "$ref": "#/components/schemas/User"
-                    },
-                    "token": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Usuário registrado."
           },
           "400": {
-            "description": "Dados de entrada inválidos ou email já cadastrado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Erro de validação."
           },
           "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Erro no servidor."
           }
         }
       }
     },
     "/api/auth/login": {
       "post": {
+        "summary": "Login do usuário",
         "tags": [
-          "Autenticação"
+          "Auth"
         ],
-        "summary": "Realizar login de usuário",
-        "description": "Valida as credenciais do usuário e retorna um token JWT de acesso que expira em 24h.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "email",
-                  "password"
-                ],
                 "properties": {
                   "email": {
-                    "type": "string",
-                    "format": "email",
-                    "example": "carlos.silva@example.com"
+                    "type": "string"
                   },
-                  "password": {
-                    "type": "string",
-                    "format": "password",
-                    "example": "senha123"
+                  "senha": {
+                    "type": "string"
                   }
                 }
               }
@@ -152,127 +231,63 @@
         },
         "responses": {
           "200": {
-            "description": "Login realizado com sucesso!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Login realizado com sucesso!"
-                    },
-                    "user": {
-                      "$ref": "#/components/schemas/User"
-                    },
-                    "token": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Email e senha são obrigatórios.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Login bem sucedido."
           },
           "401": {
-            "description": "Credenciais inválidas.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Credenciais inválidas."
           },
           "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Erro no servidor."
           }
         }
       }
     },
-    "/api/events": {
+    "/api/clientes": {
       "get": {
+        "summary": "Listar clientes",
         "tags": [
-          "Eventos"
+          "Clientes"
         ],
-        "summary": "Listar todos os eventos",
-        "description": "Retorna uma lista contendo todos os eventos cadastrados na plataforma ordenados por data de forma crescente. Requer autenticação por token.",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
           "200": {
-            "description": "Lista de eventos retornada com sucesso.",
+            "description": "Lista de clientes",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "total": {
-                      "type": "integer",
-                      "example": 2
-                    },
-                    "events": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Event"
-                      }
-                    }
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Cliente"
                   }
                 }
               }
             }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
             }
           }
-        }
+        ]
       },
       "post": {
+        "summary": "Criar cliente",
         "tags": [
-          "Eventos"
+          "Clientes"
         ],
-        "summary": "Criar um novo evento",
-        "description": "Cria um novo evento no sistema, vinculando o usuário autenticado como o organizador. A data do evento deve ser no futuro. Requer autenticação por token.",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -281,61 +296,16 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "title",
-                  "description",
-                  "date",
-                  "location",
-                  "maxParticipants",
-                  "category"
-                ],
                 "properties": {
-                  "title": {
-                    "type": "string",
-                    "minLength": 3,
-                    "maxLength": 100,
-                    "example": "Workshop de Node.js e Swagger"
+                  "nome": {
+                    "type": "string"
                   },
-                  "description": {
-                    "type": "string",
-                    "minLength": 10,
-                    "maxLength": 1000,
-                    "example": "Aprenda a documentar APIs REST de forma eficiente e profissional utilizando Swagger e OpenAPI."
-                  },
-                  "date": {
-                    "type": "string",
-                    "format": "date-time",
-                    "example": "2026-12-31T18:00:00.000Z"
-                  },
-                  "location": {
-                    "type": "string",
-                    "example": "Laboratório de Informática 3"
-                  },
-                  "maxParticipants": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 30
-                  },
-                  "category": {
-                    "type": "string",
-                    "enum": [
-                      "conferencia",
-                      "workshop",
-                      "seminario",
-                      "meetup",
-                      "outro"
-                    ],
-                    "example": "workshop"
+                  "telefone": {
+                    "type": "string"
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "ativo",
-                      "cancelado",
-                      "concluido"
-                    ],
-                    "default": "ativo",
-                    "example": "ativo"
+                    "example": "medio"
                   }
                 }
               }
@@ -344,67 +314,34 @@
         },
         "responses": {
           "201": {
-            "description": "Evento criado com sucesso!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Evento criado com sucesso!"
-                    },
-                    "event": {
-                      "$ref": "#/components/schemas/Event"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Erros de validação (ex: campos em falta, data no passado ou categoria inválida).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Cliente criado"
           },
           "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
+            "description": "Erro no servidor."
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
             }
           }
-        }
+        ]
       }
     },
-    "/api/events/{id}": {
+    "/api/clientes/{id}": {
       "get": {
+        "summary": "Buscar cliente",
         "tags": [
-          "Eventos"
+          "Clientes"
         ],
-        "summary": "Buscar evento por ID",
-        "description": "Busca e retorna detalhes de um evento específico através do seu ID no formato de ObjectId do MongoDB. Requer autenticação por token.",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -412,75 +349,37 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID único do Evento",
             "schema": {
-              "type": "string",
-              "example": "660c1d2e1f4b3c2a1a0b1234"
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Dados do evento detalhados.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Event"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "ID inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Dados do cliente"
           },
           "404": {
-            "description": "Evento não encontrado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Cliente não encontrado"
           }
         }
       },
       "put": {
+        "summary": "Atualizar cliente",
         "tags": [
-          "Eventos"
+          "Clientes"
         ],
-        "summary": "Atualizar um evento por ID",
-        "description": "Permite que apenas o organizador original do evento atualize suas propriedades. Requer autenticação por token.",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -488,10 +387,17 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID único do Evento",
             "schema": {
-              "type": "string",
-              "example": "660c1d2e1f4b3c2a1a0b1234"
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -502,51 +408,14 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "title": {
-                    "type": "string",
-                    "minLength": 3,
-                    "maxLength": 100,
-                    "example": "Workshop de Node.js Avançado"
+                  "nome": {
+                    "type": "string"
                   },
-                  "description": {
-                    "type": "string",
-                    "minLength": 10,
-                    "maxLength": 1000,
-                    "example": "Aprenda arquiteturas avançadas de APIs Rest Express no Node.js."
-                  },
-                  "date": {
-                    "type": "string",
-                    "format": "date-time",
-                    "example": "2026-12-31T20:00:00.000Z"
-                  },
-                  "location": {
-                    "type": "string",
-                    "example": "Laboratório de Informática 4"
-                  },
-                  "maxParticipants": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 40
-                  },
-                  "category": {
-                    "type": "string",
-                    "enum": [
-                      "conferencia",
-                      "workshop",
-                      "seminario",
-                      "meetup",
-                      "outro"
-                    ],
-                    "example": "workshop"
+                  "telefone": {
+                    "type": "string"
                   },
                   "status": {
-                    "type": "string",
-                    "enum": [
-                      "ativo",
-                      "cancelado",
-                      "concluido"
-                    ],
-                    "example": "ativo"
+                    "type": "string"
                   }
                 }
               }
@@ -555,85 +424,18 @@
         },
         "responses": {
           "200": {
-            "description": "Evento atualizado com sucesso!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Evento atualizado com sucesso!"
-                    },
-                    "event": {
-                      "$ref": "#/components/schemas/Event"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "ID inválido ou erro de validação nos dados fornecidos.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Acesso proibido. Apenas o organizador do evento pode editá-lo.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Evento não encontrado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Cliente atualizado"
           }
         }
       },
       "delete": {
+        "summary": "Deletar cliente",
         "tags": [
-          "Eventos"
+          "Clientes"
         ],
-        "summary": "Excluir um evento por ID",
-        "description": "Permite que apenas o organizador original delete permanentemente o evento cadastrado. Requer autenticação por token.",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -641,93 +443,73 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID único do Evento",
             "schema": {
-              "type": "string",
-              "example": "660c1d2e1f4b3c2a1a0b1234"
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Evento deletado com sucesso!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Evento deletado com sucesso!"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "ID inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Acesso proibido. Apenas o organizador do evento pode deletá-lo.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Evento não encontrado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Cliente deletado"
           }
         }
       }
     },
-    "/api/registrations": {
-      "post": {
+    "/api/categorias": {
+      "get": {
+        "summary": "Listar categorias",
         "tags": [
-          "Inscrições"
+          "Categorias"
         ],
-        "summary": "Inscrever-se em um evento",
-        "description": "Cria ou reativa uma inscrição para o usuário autenticado em um evento especificado. O evento deve estar 'ativo' e possuir vagas disponíveis. Requer autenticação por token.",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de categorias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Categoria"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Criar categoria",
+        "tags": [
+          "Categorias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -736,14 +518,107 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "eventId"
-                ],
                 "properties": {
-                  "eventId": {
-                    "type": "string",
-                    "description": "ID único do Evento",
-                    "example": "660c1d2e1f4b3c2a1a0b1234"
+                  "nome": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Categoria criada"
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/categorias/{id}": {
+      "get": {
+        "summary": "Buscar categoria",
+        "tags": [
+          "Categorias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados da categoria"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualizar categoria",
+        "tags": [
+          "Categorias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string"
                   }
                 }
               }
@@ -752,234 +627,18 @@
         },
         "responses": {
           "200": {
-            "description": "Inscrição reativada com sucesso (caso já tivesse uma inscrição cancelada).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Inscrição realizada com sucesso!"
-                    },
-                    "registration": {
-                      "$ref": "#/components/schemas/Registration"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Inscrição realizada com sucesso!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Inscrição realizada com sucesso!"
-                    },
-                    "registration": {
-                      "$ref": "#/components/schemas/Registration"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "ID de evento em falta ou inválido, evento não está ativo, ou evento lotado/usuário já inscrito.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Evento não encontrado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Categoria atualizada"
           }
         }
-      }
-    },
-    "/api/registrations/my": {
-      "get": {
-        "tags": [
-          "Inscrições"
-        ],
-        "summary": "Listar minhas inscrições",
-        "description": "Retorna uma lista contendo todas as inscrições ativas (status: 'confirmada') realizadas pelo usuário autenticado. Requer autenticação por token.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de inscrições do próprio usuário.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "total": {
-                      "type": "integer",
-                      "example": 1
-                    },
-                    "registrations": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Registration"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/registrations/event/{eventId}": {
-      "get": {
-        "tags": [
-          "Inscrições"
-        ],
-        "summary": "Listar inscritos de um evento",
-        "description": "Retorna uma lista de todas as inscrições confirmadas para um evento específico. Requer autenticação por token.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "description": "ID único do Evento",
-            "schema": {
-              "type": "string",
-              "example": "660c1d2e1f4b3c2a1a0b1234"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de inscritos no evento retornado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "total": {
-                      "type": "integer",
-                      "example": 5
-                    },
-                    "registrations": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Registration"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "ID do evento inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/registrations/{id}": {
+      },
       "delete": {
+        "summary": "Deletar categoria",
         "tags": [
-          "Inscrições"
+          "Categorias"
         ],
-        "summary": "Cancelar uma inscrição por ID",
-        "description": "Altera o status da inscrição para 'cancelada'. Apenas o participante dono da inscrição pode realizar esta operação. Requer autenticação por token.",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -987,275 +646,472 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID único da Inscrição",
             "schema": {
-              "type": "string",
-              "example": "660c1d2e1f4b3c2a1a0b5678"
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Inscrição cancelada com sucesso!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Inscrição cancelada com sucesso!"
-                    },
-                    "registration": {
-                      "$ref": "#/components/schemas/Registration"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "ID inválido ou inscrição já estava previamente cancelada.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado. Token ausente ou inválido.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Acesso proibido. O usuário logado só pode cancelar suas próprias inscrições.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Inscrição não encontrada.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno do servidor.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "description": "Categoria deletada"
           }
         }
-      }
-    }
-  },
-  "components": {
-    "securitySchemes": {
-      "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "Insira o token JWT gerado no endpoint de login ou registro. O formato deve ser apenas o token cru."
       }
     },
-    "schemas": {
-      "User": {
-        "type": "object",
-        "properties": {
-          "_id": {
-            "type": "string",
-            "example": "660c1d2e1f4b3c2a1a0b9999"
-          },
-          "name": {
-            "type": "string",
-            "example": "Carlos Silva"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "carlos.silva@example.com"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "admin"
-            ],
-            "example": "user"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-06-02T11:15:00.000Z"
+    "/api/produtos": {
+      "get": {
+        "summary": "Listar produtos",
+        "tags": [
+          "Produtos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
-        }
-      },
-      "Event": {
-        "type": "object",
-        "properties": {
-          "_id": {
-            "type": "string",
-            "example": "660c1d2e1f4b3c2a1a0b1234"
-          },
-          "title": {
-            "type": "string",
-            "example": "Workshop de Node.js e Swagger"
-          },
-          "description": {
-            "type": "string",
-            "example": "Aprenda a documentar APIs REST de forma eficiente e profissional utilizando Swagger e OpenAPI."
-          },
-          "date": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-12-31T18:00:00.000Z"
-          },
-          "location": {
-            "type": "string",
-            "example": "Laboratório de Informática 3"
-          },
-          "maxParticipants": {
-            "type": "integer",
-            "example": 30
-          },
-          "category": {
-            "type": "string",
-            "example": "workshop"
-          },
-          "organizer": {
-            "anyOf": [
-              {
-                "type": "string",
-                "description": "ID do organizador"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "_id": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Produto"
                   }
                 }
               }
-            ],
-            "example": {
-              "_id": "660c1d2e1f4b3c2a1a0b9999",
-              "name": "Carlos Silva",
-              "email": "carlos.silva@example.com"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Criar produto",
+        "tags": [
+          "Produtos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string"
+                  },
+                  "valor": {
+                    "type": "number"
+                  },
+                  "estoque": {
+                    "type": "integer"
+                  },
+                  "categorias_id_categoria": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Produto criado"
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/produtos/{id}": {
+      "get": {
+        "summary": "Buscar produto",
+        "tags": [
+          "Produtos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           },
-          "status": {
-            "type": "string",
-            "example": "ativo"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-06-02T11:16:00.000Z"
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do produto"
           }
         }
       },
-      "Registration": {
-        "type": "object",
-        "properties": {
-          "_id": {
-            "type": "string",
-            "example": "660c1d2e1f4b3c2a1a0b5678"
+      "put": {
+        "summary": "Atualizar produto",
+        "tags": [
+          "Produtos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
           },
-          "event": {
-            "anyOf": [
-              {
-                "type": "string",
-                "description": "ID do evento"
-              },
-              {
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
                 "type": "object",
                 "properties": {
-                  "title": {
+                  "nome": {
                     "type": "string"
                   },
-                  "date": {
+                  "valor": {
+                    "type": "number"
+                  },
+                  "estoque": {
+                    "type": "integer"
+                  },
+                  "categorias_id_categoria": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produto atualizado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletar produto",
+        "tags": [
+          "Produtos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto deletado"
+          }
+        }
+      }
+    },
+    "/api/pedidos": {
+      "get": {
+        "summary": "Listar pedidos",
+        "tags": [
+          "Pedidos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Pedido"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Criar pedido",
+        "tags": [
+          "Pedidos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
                     "type": "string",
                     "format": "date-time"
                   },
-                  "location": {
-                    "type": "string"
-                  }
-                }
-              }
-            ],
-            "example": {
-              "_id": "660c1d2e1f4b3c2a1a0b1234",
-              "title": "Workshop de Node.js e Swagger",
-              "date": "2026-12-31T18:00:00.000Z",
-              "location": "Laboratório de Informática 3"
-            }
-          },
-          "participant": {
-            "anyOf": [
-              {
-                "type": "string",
-                "description": "ID do participante"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
+                  "clientes_id_cliente": {
+                    "type": "integer"
                   },
-                  "email": {
-                    "type": "string"
+                  "itens": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "produtos_id_produto": {
+                          "type": "integer"
+                        },
+                        "quantidade": {
+                          "type": "integer"
+                        },
+                        "valor": {
+                          "type": "number"
+                        }
+                      }
+                    }
                   }
                 }
               }
-            ],
-            "example": {
-              "_id": "660c1d2e1f4b3c2a1a0b9999",
-              "name": "Carlos Silva",
-              "email": "carlos.silva@example.com"
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pedido criado"
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/pedidos/{id}": {
+      "get": {
+        "summary": "Buscar pedido",
+        "tags": [
+          "Pedidos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           },
-          "status": {
-            "type": "string",
-            "example": "confirmada"
-          },
-          "registeredAt": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-06-02T11:17:00.000Z"
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do pedido e seus itens"
           }
         }
       },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "example": "Mensagem detalhada do erro ocorrido."
+      "put": {
+        "summary": "Atualizar pedido",
+        "tags": [
+          "Pedidos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "clientes_id_cliente": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pedido atualizado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletar pedido",
+        "tags": [
+          "Pedidos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "description": "ID do usuário para validação extra do token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pedido deletado"
           }
         }
       }

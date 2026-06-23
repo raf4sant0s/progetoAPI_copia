@@ -1,10 +1,11 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const usuarioModel = require('../models/usuarioModel');
 
 // Gera token JWT
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user.id_usuario },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
@@ -13,15 +14,20 @@ const generateToken = (user) => {
 // POST /api/auth/register
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { email, senha } = req.body;
+    
+    if (!email || !senha) {
+      return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
+    }
 
     // Verifica se o email já existe
-    const existingUser = await User.findOne({ email });
+    const existingUser = await usuarioModel.buscarPorEmail(email);
     if (existingUser) {
       return res.status(400).json({ error: 'Email já cadastrado.' });
     }
 
-    const user = await User.create({ name, email, password });
+    const userId = await usuarioModel.criarUsuario(email, senha);
+    const user = { id_usuario: userId, email };
     const token = generateToken(user);
 
     res.status(201).json({
@@ -30,10 +36,6 @@ const register = async (req, res) => {
       token
     });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return res.status(400).json({ error: messages.join(', ') });
-    }
     console.error('Erro no registro:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
@@ -42,18 +44,18 @@ const register = async (req, res) => {
 // POST /api/auth/login
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, senha } = req.body;
 
-    if (!email || !password) {
+    if (!email || !senha) {
       return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await usuarioModel.buscarPorEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(senha, user.senha);
     if (!isMatch) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
@@ -62,10 +64,11 @@ const login = async (req, res) => {
 
     res.json({
       message: 'Login realizado com sucesso!',
-      user,
+      user: { id_usuario: user.id_usuario, email: user.email },
       token
     });
   } catch (error) {
+    console.error('Erro no login:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 };

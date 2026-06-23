@@ -1,20 +1,20 @@
-# Sistema de Gestão de Eventos API
+# Sistema de Gestão (API REST) - Migração para MySQL
 
-API REST em Node.js com persistência em MongoDB para gestão de eventos, participantes e inscrições. Desenvolvido com foco em segurança, autenticação de usuários e boas práticas de versionamento.
+API REST em Node.js com persistência em banco de dados relacional MySQL (anteriormente MongoDB). Desenvolvida para gerenciar Categorias, Produtos, Clientes e Pedidos. A API inclui autenticação JWT, validação rigorosa de usuários e segurança contra SQL Injection via Prepared Statements.
 
 ## Tecnologias Utilizadas
 
 - **Node.js & Express:** Framework base para construção da API REST.
-- **MongoDB & Mongoose:** Banco de dados NoSQL e ODM para modelagem e persistência.
+- **MySQL & mysql2:** Sistema Gerenciador de Banco de Dados Relacional e driver com suporte a Promises.
 - **Autenticação:** JSON Web Token (JWT) e BCrypt para hash de senhas.
-- **Segurança:** `helmet` para headers de segurança e `express-mongo-sanitize` contra NoSQL Injection.
+- **Segurança:** Prepared Statements em todas as queries (contra SQL Injection) e `helmet` para headers HTTP seguros.
 
 ## Como Instalar e Rodar Localmente
 
 1. **Clone o repositório:**
    ```bash
    git clone https://github.com/raf4sant0s/projetoAPI_REST.git
-   cd sistema-gestao-eventos
+   cd projetoAPI_REST
    ```
 
 2. **Instale as dependências:**
@@ -23,19 +23,20 @@ API REST em Node.js com persistência em MongoDB para gestão de eventos, partic
    ```
 
 3. **Configure as Variáveis de Ambiente:**
-   - Copie o arquivo `.env.example` para `.env`:
-     ```bash
-     cp .env.example .env
-     ```
-   - Edite o arquivo `.env` e configure suas variáveis:
+   - Crie/edite o arquivo `.env` na raiz do projeto e configure suas credenciais do MySQL:
      ```env
      PORT=3000
-     MONGODB_URI=mongodb://localhost:27017/gestao-eventos
-     JWT_SECRET=sua_chave_secreta_super_segura
+     JWT_SECRET=sua_chave_secreta_aqui
+     DB_HOST=127.0.0.1
+     DB_USER=root
+     DB_PASS=sua_senha_do_mysql
+     DB_NAME=loja
      ```
-   - *Nota: É necessário ter o MongoDB rodando localmente na porta 27017 ou atualizar a string de conexão para um cluster MongoDB Atlas.*
 
-4. **Inicie o Servidor:**
+4. **Prepare o Banco de Dados:**
+   - Importe o script `loja.sql` fornecido no repositório para o seu servidor MySQL para criar as tabelas e dados iniciais.
+
+5. **Inicie o Servidor:**
    - Para desenvolvimento (com hot-reload):
      ```bash
      npm run dev
@@ -49,54 +50,54 @@ API REST em Node.js com persistência em MongoDB para gestão de eventos, partic
 
 A URL base padrão é: `http://localhost:3000/api`
 
+### Metadados (Acesso Livre)
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/versao` | Retorna a versão e o status da API (ex: `{"versao": "2.0.0", "status": "online"}`). |
+
 ### Autenticação (`/auth`)
 | Método | Rota | Descrição | Requer Auth |
 |---|---|---|---|
-| POST | `/auth/register` | Cria uma nova conta de usuário. Enviar `name`, `email`, `password`. | Não |
+| POST | `/auth/register` | Cria uma nova conta de usuário. Enviar `email`, `password`. | Não |
 | POST | `/auth/login` | Autentica um usuário e retorna um JWT. Enviar `email`, `password`. | Não |
 
-### Eventos (`/events`)
+### Rotas Protegidas de CRUD
 *Todos os endpoints abaixo requerem o header: `Authorization: Bearer <seu_token>`*
+*Qualquer tentativa de acesso sem um token válido ou com ID de usuário incorreto retornará `401 Unauthorized` ou `403 Forbidden`.*
 
+#### Categorias (`/categorias`)
 | Método | Rota | Descrição |
 |---|---|---|
-| POST | `/events` | Cria um novo evento. |
-| GET | `/events` | Lista todos os eventos cadastrados. |
-| GET | `/events/:id` | Busca detalhes de um evento específico. |
-| PUT | `/events/:id` | Atualiza um evento (apenas o organizador pode realizar). |
-| DELETE | `/events/:id` | Remove um evento (apenas o organizador pode realizar). |
+| GET | `/categorias` | Lista todas as categorias. |
+| GET | `/categorias/:id` | Busca detalhes de uma categoria. |
+| POST | `/categorias` | Cria uma nova categoria. |
+| PUT | `/categorias/:id` | Atualiza uma categoria existente. |
+| DELETE | `/categorias/:id` | Remove uma categoria. |
 
-### Inscrições (`/registrations`)
-*Todos os endpoints abaixo requerem o header: `Authorization: Bearer <seu_token>`*
+#### Produtos (`/produtos`)
+- O CRUD de Produtos (`GET`, `POST`, `PUT`, `DELETE` em `/produtos` e `/produtos/:id`) segue a mesma estrutura de Categorias.
 
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/registrations` | Inscreve o usuário autenticado em um evento. Enviar `eventId`. |
-| GET | `/registrations/my` | Lista todas as inscrições do usuário autenticado. |
-| GET | `/registrations/event/:eventId` | Lista todos os participantes inscritos em um evento específico. |
-| DELETE | `/registrations/:id` | Cancela uma inscrição. |
+#### Clientes (`/clientes`)
+- O CRUD de Clientes (`GET`, `POST`, `PUT`, `DELETE` em `/clientes` e `/clientes/:id`) segue a mesma estrutura de Categorias.
 
-## Estrutura do Projeto
+#### Pedidos (`/pedidos`)
+- O CRUD de Pedidos (`GET`, `POST`, `PUT`, `DELETE` em `/pedidos` e `/pedidos/:id`) segue a mesma estrutura de Categorias. A criação de pedidos suporta inserção simultânea dos itens do pedido.
+
+## Estrutura do Projeto (Migrado)
 
 ```text
-sistema-gestao-eventos/
+projetoAPI_REST/
 ├── src/
-│   ├── config/          # Configuração de banco de dados
-│   ├── controllers/     # Lógica de negócio de cada rota
-│   ├── middlewares/     # Middlewares Express (Auth, Sanitização)
-│   ├── models/          # Schemas do Mongoose (Event, Registration, User)
-│   ├── routes/          # Definição dos endpoints REST
-│   └── app.js           # Configuração da instância do Express
-├── server.js            # Arquivo principal que inicia o servidor
-├── .env.example         # Exemplo de variáveis de ambiente
-├── .gitignore           # Arquivos e diretórios ignorados pelo Git
-├── package.json         # Dependências e scripts do projeto
+│   ├── config/          # Configuração do Pool de conexões MySQL (`database.js`)
+│   ├── controllers/     # Lógica de negócio e validação (Auth, Categorias, Produtos, etc.)
+│   ├── middlewares/     # Middlewares Express (`authMiddleware.js`)
+│   ├── models/          # Queries SQL com Prepared Statements para cada entidade
+│   ├── routes/          # Definição dos endpoints REST (Rotas privadas e públicas)
+│   ├── app.js           # Configuração da instância do Express e registro das rotas
+│   └── swagger.json     # Documentação da API
+├── server.js            # Arquivo principal que inicia o servidor e testa a conexão DB
+├── loja.sql             # Script do banco de dados relacional
+├── .env                 # Variáveis de ambiente (não versionado)
+├── package.json         # Dependências do projeto
 └── README.md            # Esta documentação
 ```
-
-## Versionamento (GitFlow)
-
-O desenvolvimento deste projeto seguiu o modelo GitFlow:
-- `main`: Código de produção.
-- `develop`: Código em desenvolvimento/integração.
-- `feature/*`: Branches dedicadas para criação de novas funcionalidades (ex: `feature/user-auth`, `feature/event-crud`).
